@@ -19,4 +19,4 @@ Das vorhandene Spawning, der Score und der Sieg bei zehn Treffern sind **Ausgang
 
 
 ## Issue 01 Erklärung
-Das Spiel wird gestartet. Es erscheinen Zielscheiben in zufälligen Positionen. Die Zielscheiben werden angeklickt und somit "zerstört". Sobald man 10 Zielscheiben erfolgreich "zerstört" hat hat man das Spiel gewonnen.
+Das Spiel wird mit "private void Start()" gestartet. Es erscheinen Zielscheiben in zufälligen Positionen durch "private void Spawn". Die Zielscheiben werden angeklickt und somit "zerstört" mit "private void OnMouseDown". Jedes mal wenn man eine Zielscheibe erfolgreich zerstört, wird ein Score hinzugefügt mit "public void IncrementScore()". Sobald man 10 Zielscheiben erfolgreich "zerstört" hat hat man das Spiel gewonnen.
