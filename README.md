@@ -13,3 +13,10 @@ Das Paket **Unity UI (uGUI)** ist unter `Packages/manifest.json` als `com.unity.
 
 ## Unterricht
 Das vorhandene Spawning, der Score und der Sieg bei zehn Treffern sind **Ausgangscode**. Schüler:innen erweitern diese Mechaniken anhand der GitHub-Issues. Der Erstimport ist eine Ausgangsversion; keine Aufgaben sind vorweg implementiert.
+
+
+
+
+
+## Issue 01 Erklärung
+Das Spiel wird gestartet. Es erscheinen Zielscheiben in zufälligen Positionen. Die Zielscheiben werden angeklickt und somit "zerstört". Sobald man 10 Zielscheiben erfolgreich "zerstört" hat hat man das Spiel gewonnen.
