@@ -2,19 +2,19 @@ using UnityEngine;
 
 public class Target : MonoBehaviour
 {
-    public GameManager gameManager;
+    public int points = 10;
+    private GameManager gameManager;
 
     private void Start()
     {
-        //create a reference to the GameManager script
-        gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
+        gameManager = FindFirstObjectByType<GameManager>();
         Destroy(gameObject, 2f);
     }
 
     private void OnMouseDown()
     {
-        //call the IncrementScore() method from the GameManager Script
-        gameManager.IncrementScore();
+        Debug.Log("Target getroffen!");
+        gameManager.IncrementScore(points);
         Destroy(gameObject);
     }
 }

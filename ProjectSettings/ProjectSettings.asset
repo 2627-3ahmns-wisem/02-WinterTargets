@@ -14,8 +14,8 @@ PlayerSettings:
   accelerometerFrequency: 60
   companyName: smeerws
   productName: FrostyTargets
-  defaultCursor: {fileID: 2800000, guid: 7c6ea3ede2827e142a557dccbd89a5bc, type: 3}
-  cursorHotspot: {x: 64, y: 64}
+  defaultCursor: {fileID: 0}
+  cursorHotspot: {x: 32, y: 32}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
   m_ShowUnitySplashScreen: 1
   m_ShowUnitySplashLogo: 1
@@ -169,7 +169,8 @@ PlayerSettings:
   androidSupportedAspectRatio: 1
   androidMaxAspectRatio: 2.1
   androidMinAspectRatio: 1
-  applicationIdentifier: {}
+  applicationIdentifier:
+    Standalone: com.smeerws.FrostyTargets
   buildNumber:
     Standalone: 0
     VisionOS: 0
@@ -301,7 +302,7 @@ PlayerSettings:
   - m_BuildTarget: 
     m_Icons:
     - serializedVersion: 2
-      m_Icon: {fileID: 2800000, guid: e2b08d0d3beb9dc479ef222e6c65856e, type: 3}
+      m_Icon: {fileID: 0}
       m_Width: 128
       m_Height: 128
       m_Kind: 0

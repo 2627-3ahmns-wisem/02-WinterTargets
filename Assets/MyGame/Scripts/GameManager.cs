@@ -3,11 +3,12 @@ using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
-    public GameObject target;
+    public GameObject[] targets;
     public GameObject parentOfTargets;
     public GameObject winSprite;
     public Text scoreText;
-    
+    public int winScore = 100;
+
     private int score = 0;
     private bool win = false;
 
@@ -36,24 +37,57 @@ public class GameManager : MonoBehaviour
     //of the GameObject ParentTargets. In this case transform.localPosition instead of transform.position is important!!
     private void Spawn()
     {
-        float randomX = Random.Range(-365f, 365f);
-        float randomY = Random.Range(-202f,202f);
+        if (targets == null || targets.Length == 0) return;
 
-        Vector2 random2DPosition = new Vector2(randomX, randomY);
+        if (parentOfTargets == null ) return;
 
-        GameObject newTarget = Instantiate(target, parentOfTargets.transform);
-        newTarget.transform.localPosition = random2DPosition;
-    }
+            Camera cam = Camera.main;
+
+    if (cam == null)
+        return;
+
+    // Sichtbaren Bereich der Kamera berechnen
+    float height = cam.orthographicSize;
+    float width = height * cam.aspect;
+
+    float randomX = Random.Range(
+        cam.transform.position.x - width + 0.8f,
+        cam.transform.position.x + width - 0.8f
+    );
+
+    float randomY = Random.Range(
+        cam.transform.position.y - height + 0.8f,
+        cam.transform.position.y + height - 0.8f
+    );
+
+    Vector3 spawnPosition = new Vector3(
+        randomX,
+        randomY,
+        0
+    );
+
+    int randomIndex = Random.Range(0, targets.Length);
+
+    GameObject newTarget = Instantiate(
+        targets[randomIndex],
+        parentOfTargets.transform
+    );
+
+    newTarget.transform.position = spawnPosition;
+
+    Debug.Log("Target wurde erstellt: " + newTarget.name);
+}
+
 
     //is called in the class Target
-    public void IncrementScore()
+    public void IncrementScore(int points)
     {
-        score++;
+        score += points;
         print(score);
 
         scoreText.text = score.ToString();
 
-        if (score >= 10)
+        if (score >= winScore)
         {
             win = true;
             winSprite.SetActive(true);
