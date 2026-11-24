@@ -3,6 +3,7 @@ using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
+    [Header("Targets (2 = 60%, 1 = 30%, 0 = 10%)")]
     public GameObject[] targets;
     public GameObject parentOfTargets;
     public GameObject winSprite;
@@ -37,14 +38,13 @@ public class GameManager : MonoBehaviour
     //of the GameObject ParentTargets. In this case transform.localPosition instead of transform.position is important!!
     private void Spawn()
     {
-        if (targets == null || targets.Length == 0) return;
+        if (targets == null || targets.Length < 3) return;
 
         if (parentOfTargets == null ) return;
 
             Camera cam = Camera.main;
 
-    if (cam == null)
-        return;
+            if (cam == null) return;
 
     // Sichtbaren Bereich der Kamera berechnen
     float height = cam.orthographicSize;
@@ -53,23 +53,33 @@ public class GameManager : MonoBehaviour
     float randomX = Random.Range(
         cam.transform.position.x - width + 0.8f,
         cam.transform.position.x + width - 0.8f
-    );
+        );
 
     float randomY = Random.Range(
         cam.transform.position.y - height + 0.8f,
         cam.transform.position.y + height - 0.8f
-    );
+        );
 
-    Vector3 spawnPosition = new Vector3(
-        randomX,
-        randomY,
-        0
-    );
+    Vector3 spawnPosition = new Vector3(randomX, randomY, 0);
 
-    int randomIndex = Random.Range(0, targets.Length);
+    float randomChance = Random.Range(0f, 100f);
+    int selectedIndex = 0;
+
+    if (randomChance < 60f)
+    {
+        selectedIndex = 2;
+    }
+    else if (randomChance < 90F)
+    {
+        selectedIndex = 1;
+    }
+    else
+    {
+        selectedIndex = 0;
+    }
 
     GameObject newTarget = Instantiate(
-        targets[randomIndex],
+        targets[selectedIndex],
         parentOfTargets.transform
     );
 
