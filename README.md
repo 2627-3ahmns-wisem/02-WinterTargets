@@ -28,8 +28,7 @@ Das Spiel wird mit "private void Start()" gestartet. Es erscheinen Zielscheiben 
 2. Treffer-Sound ("Ice Shatter / Snow Hit")
    - Quelle: [(https://pixabay.com/sound-effects/)]
    - Urheber: [Universfield&freesounf_community]
-   - Lizenz: CC0 / Pixabay Content License
-
+   
 3. Ziel-Sprites (Schneemann, Geschenk, Eisblock) & Treffer-Partikel
    - Quelle: [GoogleBilder]
 
