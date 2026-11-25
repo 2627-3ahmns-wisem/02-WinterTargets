@@ -23,15 +23,13 @@ Das Spiel wird mit "private void Start()" gestartet. Es erscheinen Zielscheiben 
 
 ## ASSET-Quellen - Frosty Targets
 1. Hintergrundgrafik ("Winter Landscape")
-   - Quelle: [Link zur Webseite]
-   - Urheber: [Name des Künstlers]
-   - Lizenz: CC0 1.0 (Public Domain)
-
+   - Quelle: [GoogleBilder]
+   
 2. Treffer-Sound ("Ice Shatter / Snow Hit")
-   - Quelle: [Link zur Sound-Datei]
-   - Urheber: [Username / Künstler]
+   - Quelle: [(https://pixabay.com/sound-effects/)]
+   - Urheber: [Universfield&freesounf_community]
    - Lizenz: CC0 / Pixabay Content License
 
 3. Ziel-Sprites (Schneemann, Geschenk, Eisblock) & Treffer-Partikel
-   - Quelle: Eigene Erstellung / [Quelle eintragen]
+   - Quelle: [GoogleBilder]
 
