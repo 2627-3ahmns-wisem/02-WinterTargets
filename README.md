@@ -20,3 +20,18 @@ Das vorhandene Spawning, der Score und der Sieg bei zehn Treffern sind **Ausgang
 
 ## Issue 01 Erklärung
 Das Spiel wird mit "private void Start()" gestartet. Es erscheinen Zielscheiben in zufälligen Positionen durch "private void Spawn". Die Zielscheiben werden angeklickt und somit "zerstört" mit "private void OnMouseDown". Jedes mal wenn man eine Zielscheibe erfolgreich zerstört, wird ein Score hinzugefügt mit "public void IncrementScore()". Sobald man 10 Zielscheiben erfolgreich "zerstört" hat hat man das Spiel gewonnen.
+
+## ASSET-Quellen - Frosty Targets
+1. Hintergrundgrafik ("Winter Landscape")
+   - Quelle: [Link zur Webseite]
+   - Urheber: [Name des Künstlers]
+   - Lizenz: CC0 1.0 (Public Domain)
+
+2. Treffer-Sound ("Ice Shatter / Snow Hit")
+   - Quelle: [Link zur Sound-Datei]
+   - Urheber: [Username / Künstler]
+   - Lizenz: CC0 / Pixabay Content License
+
+3. Ziel-Sprites (Schneemann, Geschenk, Eisblock) & Treffer-Partikel
+   - Quelle: Eigene Erstellung / [Quelle eintragen]
+
