@@ -1,106 +1,163 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement; // Wichtig für den Neustart der Runde
 
 public class GameManager : MonoBehaviour
 {
     [Header("Targets (2 = 60%, 1 = 30%, 0 = 10%)")]
     public GameObject[] targets;
     public GameObject parentOfTargets;
-    public GameObject winSprite;
+
+    [Header("UI & Spielzustand")]
     public Text scoreText;
-    public int winScore = 100;
+    public Text timerText;          // UI-Text für den Countdown
+    public GameObject gameOverPanel; // Panel für die Ergebnisanzeige am Ende
+    public Text finalScoreText;      // UI-Text im Panel für den Endpunktestand
+
+    [Header("Runden-Einstellungen")]
+    public float roundDuration = 60f;
 
     private int score = 0;
-    private bool win = false;
+    private float timeRemaining;
+    private bool isGameOver = false;
+
+    // Erlaubt dem Target-Skript abzufragen, ob das Spiel noch läuft
+    public bool IsGameOver => isGameOver;
 
     private void Start()
     {
-        InvokeRepeating("Spawn",1f,1f);
+        timeRemaining = roundDuration;
+        isGameOver = false;
+
+        if (gameOverPanel != null)
+            gameOverPanel.SetActive(false);
+
+        UpdateTimerUI();
+        InvokeRepeating("Spawn", 1f, 1f);
     }
 
     private void Update()
     {
-        //if the player hits 10 times, the player has won and the Spawn method will not called further. 
-        if(win)
+        // Wenn die Runde vorbei ist, nichts mehr ausführen
+        if (isGameOver) return;
+
+        // Countdown herunterzählen
+        timeRemaining -= Time.deltaTime;
+
+        if (timeRemaining <= 0f)
         {
-            CancelInvoke("Spawn");
+            timeRemaining = 0f;
+            EndGame();
         }
 
-        //every shoot (clicking left mouse button) produce a shooting sound.
+        UpdateTimerUI();
+
+        // Schuss-Sound nur während der aktiven Runde abspielen
         if (Input.GetMouseButtonDown(0))
         {
-            gameObject.GetComponent<AudioSource>().Play();
+            AudioSource audio = gameObject.GetComponent<AudioSource>();
+            if (audio != null) audio.Play();
         }
     }
 
-    //Spawn a target at a random position within a specified x and y range.
-    //Instantiate (make a concrete GameObject, i.e., a clone from the given prefeb target) the target as a child
-    //of the GameObject ParentTargets. In this case transform.localPosition instead of transform.position is important!!
+    private void UpdateTimerUI()
+    {
+        if (timerText != null)
+        {
+            // Auf ganze Sekunden aufrunden (zeigt 60 bis 0 an)
+            timerText.text = Mathf.CeilToInt(timeRemaining).ToString();
+        }
+    }
+
+    private void EndGame()
+    {
+        isGameOver = true;
+        CancelInvoke("Spawn");
+
+        // Alle noch aktiven Ziele vom Bildschirm entfernen
+        if (parentOfTargets != null)
+        {
+            foreach (Transform child in parentOfTargets.transform)
+            {
+                Destroy(child.gameObject);
+            }
+        }
+
+        // Ergebnisanzeige einblenden
+        if (gameOverPanel != null)
+        {
+            gameOverPanel.SetActive(true);
+        }
+
+        if (finalScoreText != null)
+        {
+            finalScoreText.text = "Endpunktestand: " + score + " Punkte";
+        }
+    }
+
     private void Spawn()
     {
+        if (isGameOver) return;
         if (targets == null || targets.Length < 3) return;
+        if (parentOfTargets == null) return;
 
-        if (parentOfTargets == null ) return;
+        Camera cam = Camera.main;
+        if (cam == null) return;
 
-            Camera cam = Camera.main;
+        float height = cam.orthographicSize;
+        float width = height * cam.aspect;
 
-            if (cam == null) return;
-
-    // Sichtbaren Bereich der Kamera berechnen
-    float height = cam.orthographicSize;
-    float width = height * cam.aspect;
-
-    float randomX = Random.Range(
-        cam.transform.position.x - width + 0.8f,
-        cam.transform.position.x + width - 0.8f
+        float randomX = Random.Range(
+            cam.transform.position.x - width + 0.8f,
+            cam.transform.position.x + width - 0.8f
         );
 
-    float randomY = Random.Range(
-        cam.transform.position.y - height + 0.8f,
-        cam.transform.position.y + height - 0.8f
+        float randomY = Random.Range(
+            cam.transform.position.y - height + 0.8f,
+            cam.transform.position.y + height - 0.8f
         );
 
-    Vector3 spawnPosition = new Vector3(randomX, randomY, 0);
+        Vector3 spawnPosition = new Vector3(randomX, randomY, 0);
 
-    float randomChance = Random.Range(0f, 100f);
-    int selectedIndex = 0;
+        float randomChance = Random.Range(0f, 100f);
+        int selectedIndex = 0;
 
-    if (randomChance < 60f)
-    {
-        selectedIndex = 2;
+        if (randomChance < 60f)
+        {
+            selectedIndex = 2;
+        }
+        else if (randomChance < 90f)
+        {
+            selectedIndex = 1;
+        }
+        else
+        {
+            selectedIndex = 0;
+        }
+
+        GameObject newTarget = Instantiate(
+            targets[selectedIndex],
+            parentOfTargets.transform
+        );
+
+        newTarget.transform.position = spawnPosition;
     }
-    else if (randomChance < 90F)
-    {
-        selectedIndex = 1;
-    }
-    else
-    {
-        selectedIndex = 0;
-    }
 
-    GameObject newTarget = Instantiate(
-        targets[selectedIndex],
-        parentOfTargets.transform
-    );
-
-    newTarget.transform.position = spawnPosition;
-
-    Debug.Log("Target wurde erstellt: " + newTarget.name);
-}
-
-
-    //is called in the class Target
     public void IncrementScore(int points)
     {
+        // Punkte nur zählen, solange die Runde noch läuft
+        if (isGameOver) return;
+
         score += points;
-        print(score);
-
-        scoreText.text = score.ToString();
-
-        if (score >= winScore)
+        if (scoreText != null)
         {
-            win = true;
-            winSprite.SetActive(true);
+            scoreText.text = score.ToString();
         }
+    }
+
+    // Diese Methode wird vom Restart-Button im UI aufgerufen
+    public void RestartGame()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }

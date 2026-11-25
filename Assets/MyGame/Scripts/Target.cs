@@ -14,16 +14,15 @@ public class Target : MonoBehaviour
     private void Start()
     {
         gameManager = FindFirstObjectByType<GameManager>();
-        Destroy(gameObject, 2f);
+        
+        // Nutzt jetzt die einstellbare lifeTime-Variable statt fest 2f
+        Destroy(gameObject, lifeTime);
 
-          
-          float randomX = Random.Range(-1f, 1f);
+        float randomX = Random.Range(-1f, 1f);
         float randomY = Random.Range(-1f, 1f);
         moveDirection = new Vector2(randomX, randomY).normalized;
 
-          
-          
-          Camera cam = Camera.main;
+        Camera cam = Camera.main;
         if (cam != null)
         {
             float height = cam.orthographicSize;
@@ -36,38 +35,38 @@ public class Target : MonoBehaviour
         }
     }
 
-
-
-      private void Update()
+    private void Update()
     {
-        // Kontrollierte Bewegung mit Time.deltaTime
         transform.Translate(moveDirection * speed * Time.deltaTime);
 
-        // Prüfen, ob der linke oder rechte Rand erreicht wurde -> Richtung umkehren
         if (transform.position.x <= minX)
         {
             transform.position = new Vector3(minX, transform.position.y, transform.position.z);
-            moveDirection.x = Mathf.Abs(moveDirection.x); // Nach rechts bewegen
+            moveDirection.x = Mathf.Abs(moveDirection.x);
         }
         else if (transform.position.x >= maxX)
         {
             transform.position = new Vector3(maxX, transform.position.y, transform.position.z);
-            moveDirection.x = -Mathf.Abs(moveDirection.x); // Nach links bewegen
+            moveDirection.x = -Mathf.Abs(moveDirection.x);
         }
-         if (transform.position.y <= minY)
+
+        if (transform.position.y <= minY)
         {
             transform.position = new Vector3(transform.position.x, minY, transform.position.z);
-            moveDirection.y = Mathf.Abs(moveDirection.y); // Nach oben bewegen
+            moveDirection.y = Mathf.Abs(moveDirection.y);
         }
         else if (transform.position.y >= maxY)
         {
             transform.position = new Vector3(transform.position.x, maxY, transform.position.z);
-            moveDirection.y = -Mathf.Abs(moveDirection.y); // Nach unten bewegen
+            moveDirection.y = -Mathf.Abs(moveDirection.y);
         }
     }
 
     private void OnMouseDown()
     {
+        // Klicks ignorieren, wenn die Spielrunde bereits beendet ist
+        if (gameManager != null && gameManager.IsGameOver) return;
+
         Debug.Log("Target getroffen!");
         gameManager.IncrementScore(points);
         Destroy(gameObject);
