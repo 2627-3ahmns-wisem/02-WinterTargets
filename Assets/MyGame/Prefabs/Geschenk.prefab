@@ -107,6 +107,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Target
   points: 20
+  speed: 3
+  lifeTime: 3.5
+  hitEffectPrefab: {fileID: 3307429884899108458, guid: 0186085338ca040249022fda85498159, type: 3}
 --- !u!61 &1276789870028361095
 BoxCollider2D:
   m_ObjectHideFlags: 0

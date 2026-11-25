@@ -6,6 +6,9 @@ public class Target : MonoBehaviour
     public float speed = 3f;
     public float lifeTime = 3.5f;
 
+    [Header("Effekte")]
+    public GameObject hitEffectPrefab;
+
     private GameManager gameManager;
     private Vector2 moveDirection;
     private float minX, maxX, minY, maxY;
@@ -66,6 +69,12 @@ public class Target : MonoBehaviour
     {
         // Klicks ignorieren, wenn die Spielrunde bereits beendet ist
         if (gameManager != null && gameManager.IsGameOver) return;
+
+        if (hitEffectPrefab != null)
+        {
+            GameObject effect = Instantiate(hitEffectPrefab, transform.position, Quaternion.identity);
+            Destroy(effect, 1.5f); // Effekt nach 1,5s aufräumen
+        }
 
         Debug.Log("Target getroffen!");
         gameManager.IncrementScore(points);

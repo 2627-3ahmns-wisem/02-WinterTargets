@@ -17,7 +17,14 @@ public class GameManager : MonoBehaviour
     [Header("Runden-Einstellungen")]
     public float roundDuration = 60f;
 
-    private int score = 0;
+    
+    [Header("Audio")]
+    public AudioClip shootSound;
+    public AudioClip hitSound;
+    private AudioSource audioSource;
+
+
+     private int score = 0;
     private float timeRemaining;
     private bool isGameOver = false;
 
@@ -26,6 +33,8 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        audioSource = GetComponent<AudioSource>();
+    
         timeRemaining = roundDuration;
         isGameOver = false;
 
@@ -55,10 +64,31 @@ public class GameManager : MonoBehaviour
         // Schuss-Sound nur während der aktiven Runde abspielen
         if (Input.GetMouseButtonDown(0))
         {
-            AudioSource audio = gameObject.GetComponent<AudioSource>();
-            if (audio != null) audio.Play();
+            if (audioSource != null && shootSound != null)
+                audioSource.PlayOneShot(shootSound);
         }
     }
+
+
+     
+     
+   public void IncrementScore(int points)
+    {
+        if (isGameOver) return;
+
+        if (audioSource != null && hitSound != null)
+            audioSource.PlayOneShot(hitSound);
+
+        score += points;
+        if (scoreText != null)
+        {
+            scoreText.text = score.ToString();
+        }
+    }
+
+
+
+
 
     private void UpdateTimerUI()
     {
@@ -143,17 +173,7 @@ public class GameManager : MonoBehaviour
         newTarget.transform.position = spawnPosition;
     }
 
-    public void IncrementScore(int points)
-    {
-        // Punkte nur zählen, solange die Runde noch läuft
-        if (isGameOver) return;
-
-        score += points;
-        if (scoreText != null)
-        {
-            scoreText.text = score.ToString();
-        }
-    }
+   
 
     // Diese Methode wird vom Restart-Button im UI aufgerufen
     public void RestartGame()
