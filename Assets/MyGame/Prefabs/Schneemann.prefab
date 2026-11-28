@@ -109,7 +109,12 @@ MonoBehaviour:
   points: 10
   speed: 3
   lifeTime: 3.5
+  maxHealth: 1
+  isBoss: 0
+  bossDestroyEffectPrefab: {fileID: 4896456883076733387, guid: 1f5251e469cb44501b891a956de94b32, type: 3}
+  isPowerUp: 0
   hitEffectPrefab: {fileID: 3307429884899108458, guid: 0186085338ca040249022fda85498159, type: 3}
+  powerUpEffectPrefab: {fileID: 9059545166873477466, guid: 2353a76be5dfc4da789bd92774391fa7, type: 3}
 --- !u!61 &1521775713982900916
 BoxCollider2D:
   m_ObjectHideFlags: 0

@@ -15,8 +15,18 @@ public class Target : MonoBehaviour
     [Header("Power-up Einstellungen")]
     public bool isPowerUp = false;
 
+
+
+
+
+
     [Header("Effekte")]
     public GameObject hitEffectPrefab;  // Kleiner Effekt bei normalem Treffer
+    public GameObject powerUpEffectPrefab;      // Effekt 2: Goldener Effekt bei Power-up-Treffer
+     
+
+
+
 
     private int currentHealth;
     private SpriteRenderer spriteRenderer;
@@ -147,6 +157,26 @@ public class Target : MonoBehaviour
         }
 
         Destroy(gameObject);
+
+
+
+
+        GameObject effectToSpawn = hitEffectPrefab;
+
+        if (isPowerUp && powerUpEffectPrefab != null)
+        {
+            effectToSpawn = powerUpEffectPrefab;
+        }
+        else if (isBoss && bossDestroyEffectPrefab != null)
+        {
+            effectToSpawn = bossDestroyEffectPrefab;
+        }
+
+        if (effectToSpawn != null)
+        {
+            GameObject effect = Instantiate(effectToSpawn, transform.position, Quaternion.identity);
+            Destroy(effect, 1.5f); // Effekt räumt sich selbst auf -> stört das Spiel nicht
+        }
     }
 
     private IEnumerator HitFlashRoutine()

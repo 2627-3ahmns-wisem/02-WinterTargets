@@ -59,6 +59,9 @@ public class GameManager : MonoBehaviour
 
 
 
+    [Header("Spezialeffekte")]
+    public GameObject comboBonusEffectPrefab;
+
 
 
     [Header("Runden-Einstellungen")]
@@ -273,6 +276,16 @@ public class GameManager : MonoBehaviour
         {
             lastBonusAwarded = comboBonusPoints;
             score += lastBonusAwarded;
+
+            // Spezialeffekt an der Trefferposition auslösen
+            if (comboBonusEffectPrefab != null && Camera.main != null)
+            {
+                Vector3 hitWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                hitWorldPos.z = 0f;
+                GameObject bonusFx = Instantiate(comboBonusEffectPrefab, hitWorldPos, Quaternion.identity);
+                Destroy(bonusFx, 1.5f);
+            }
+
             Debug.Log($"COMBO {currentCombo}x! +{lastBonusAwarded} Bonuspunkte!");
         }
 
