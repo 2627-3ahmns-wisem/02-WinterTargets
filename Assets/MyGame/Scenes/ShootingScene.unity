@@ -1427,6 +1427,9 @@ MonoBehaviour:
   minSpawnInterval: 0.35
   startSpeedMultiplier: 1
   maxSpeedMultiplier: 2.2
+  bossPrefab: {fileID: 6613221883882650850, guid: 6dda1135393cb467687891f6e4cdc730, type: 3}
+  bossScoreInterval: 100
+  bossHitSound: {fileID: 8300000, guid: 7118dc34980914fd591c1c327cc4d604, type: 3}
   roundDuration: 60
   scoreText: {fileID: 821733796}
   highScoreText: {fileID: 2020847968}

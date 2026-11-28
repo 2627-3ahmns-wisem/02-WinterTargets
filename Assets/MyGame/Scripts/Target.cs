@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class Target : MonoBehaviour
@@ -6,20 +7,40 @@ public class Target : MonoBehaviour
     public float speed = 3f;
     public float lifeTime = 3.5f;
 
+    [Header("Lebenspunkte & Boss-Einstellungen")]
+    public int maxHealth = 1;           // Normale Ziele = 1, Boss-Schneemann = 3
+    public bool isBoss = false;         // Im Boss-Prefab anhaken!
+    public GameObject bossDestroyEffectPrefab; // Großer Effekt nur beim endgültigen Abschuss
+
     [Header("Power-up Einstellungen")]
-    public bool isPowerUp = false; // Im Power-up-Prefab anhaken!
+    public bool isPowerUp = false;
 
     [Header("Effekte")]
-    public GameObject hitEffectPrefab;
+    public GameObject hitEffectPrefab;  // Kleiner Effekt bei normalem Treffer
+
+    private int currentHealth;
+    private SpriteRenderer spriteRenderer;
+    private Color originalColor;
+    private Vector3 originalScale;
 
     private GameManager gameManager;
     private Vector2 moveDirection;
     private float minX, maxX, minY, maxY;
     private float padding = 0.6f;
 
+    // Öffentliche Property zum Testen der aktuellen HP
+    public int CurrentHealth => currentHealth;
+
     private void Start()
     {
         gameManager = FindFirstObjectByType<GameManager>();
+        currentHealth = maxHealth;
+
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer != null)
+            originalColor = spriteRenderer.color;
+        originalScale = transform.localScale;
+
         Destroy(gameObject, lifeTime);
 
         float randomX = Random.Range(-1f, 1f);
@@ -41,6 +62,7 @@ public class Target : MonoBehaviour
 
     private void Update()
     {
+        // (Deine bestehende Bewegungs- und Randabprall-Logik bleibt hier komplett unverändert!)
         transform.Translate(moveDirection * speed * Time.deltaTime);
 
         if (transform.position.x <= minX)
@@ -70,25 +92,82 @@ public class Target : MonoBehaviour
     {
         if (gameManager != null && gameManager.IsGameOver) return;
 
-        if (hitEffectPrefab != null)
+        TakeHit();
+    }
+
+    public void TakeHit()
+    {
+        currentHealth--;
+
+        // FALL 1: Ziel überlebt den Treffer (z. B. Boss bei Treffer 1 und 2)
+        if (currentHealth > 0)
         {
-            GameObject effect = Instantiate(hitEffectPrefab, transform.position, Quaternion.identity);
-            Destroy(effect, 1.5f);
+            // Kleiner Treffer-Effekt (keine Zerstörung!)
+            if (hitEffectPrefab != null)
+            {
+                GameObject effect = Instantiate(hitEffectPrefab, transform.position, Quaternion.identity);
+                Destroy(effect, 1.0f);
+            }
+
+            // Combo weiterzählen & Treffer-Feedback geben
+            if (gameManager != null)
+            {
+                gameManager.RegisterBossHit(currentHealth, maxHealth);
+            }
+
+            // Sichtbares Feedback: Kurz rot aufblinken & minimal kleiner werden
+            StopAllCoroutines();
+            StartCoroutine(HitFlashRoutine());
+            return;
+        }
+
+        // FALL 2: Endgültiger Abschuss (currentHealth <= 0)
+        GameObject finalEffect = (isBoss && bossDestroyEffectPrefab != null) ? bossDestroyEffectPrefab : hitEffectPrefab;
+        if (finalEffect != null)
+        {
+            GameObject effect = Instantiate(finalEffect, transform.position, Quaternion.identity);
+            Destroy(effect, 2.0f);
         }
 
         if (gameManager != null)
         {
             if (isPowerUp)
             {
-               gameManager.RegisterHit();
+                gameManager.RegisterHit();
                 gameManager.ActivateDoublePoints();
             }
             else
             {
                 gameManager.IncrementScore(points);
+                if (isBoss)
+                {
+                    Debug.Log("BOSS BESIEGT! Endgültiger Abschuss!");
+                }
             }
         }
 
         Destroy(gameObject);
+    }
+
+    private IEnumerator HitFlashRoutine()
+    {
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = Color.red;
+        }
+        // Kurzer Treffer-Impuls (aufblähen)
+        transform.localScale = originalScale * 1.15f;
+
+        yield return new WaitForSeconds(0.12f);
+
+        if (spriteRenderer != null)
+        {
+            // Bleibt mit jedem Treffer leicht rötlicher, damit Schaden dauerhaft sichtbar ist
+            float healthRatio = (float)currentHealth / maxHealth;
+            spriteRenderer.color = Color.Lerp(new Color(1f, 0.45f, 0.45f), originalColor, healthRatio);
+        }
+        // Schrumpft pro Treffer leicht, damit man auch an der Größe sieht, dass HP fehlen
+        float scaleFactor = 0.85f + (0.15f * ((float)currentHealth / maxHealth));
+        transform.localScale = originalScale * scaleFactor;
     }
 }

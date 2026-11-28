@@ -28,6 +28,19 @@ public class GameManager : MonoBehaviour
 
 
 
+
+    [Header("Boss-Einstellungen")]
+    public GameObject bossPrefab;         // Dein Boss-Schneemann-Prefab
+    public int bossScoreInterval = 100;   // Nachvollziehbare Bedingung: Alle 100 Punkte erscheint ein Boss
+    public AudioClip bossHitSound;        // Dumpferer/metallischer Sound für Boss-Rüstung (optional)
+
+    private int nextBossScoreThreshold;
+    private GameObject activeBoss;
+
+
+
+
+
     [Header("Runden-Einstellungen")]
     public float roundDuration = 60f;
 
@@ -79,6 +92,9 @@ public class GameManager : MonoBehaviour
     public float CurrentSpawnInterval => currentSpawnInterval;
     public float CurrentSpeedMultiplier => currentSpeedMultiplier;
 
+    
+    
+    
     private void Start()
     {
         audioSource = GetComponent<AudioSource>();
@@ -105,6 +121,12 @@ public class GameManager : MonoBehaviour
 
         highScore = PlayerPrefs.GetInt(HIGH_SCORE_KEY, 0);
         UpdateHighScoreUI();
+
+
+        nextBossScoreThreshold = bossScoreInterval;
+        activeBoss = null;
+
+
     }
 
     private void Update()
@@ -236,6 +258,14 @@ public class GameManager : MonoBehaviour
         {
             scoreText.text = score.ToString();
         }
+
+
+        if (bossPrefab != null && activeBoss == null && score >= nextBossScoreThreshold)
+        {
+            SpawnBoss();
+            nextBossScoreThreshold += bossScoreInterval;
+        }
+
     }
 
     private void UpdateComboUI()
@@ -361,6 +391,7 @@ public class GameManager : MonoBehaviour
         UpdateHighScoreUI();
         Debug.Log("Highscore wurde auf 0 zurückgesetzt.");
     }
+    
 
 
 
@@ -413,5 +444,48 @@ public class GameManager : MonoBehaviour
 
         GameObject newTarget = Instantiate(prefabToSpawn, parentOfTargets.transform);
         newTarget.transform.position = spawnPosition;
+    }
+
+
+
+
+    public void RegisterBossHit(int remainingHealth, int maxHealth)
+{
+    if (isGameOver) return;
+
+    // Zählt als gültiger Treffer in der Combo
+    RegisterHit();
+
+    if (audioSource != null)
+    {
+        if (bossHitSound != null)
+            audioSource.PlayOneShot(bossHitSound);
+        else if (hitSound != null)
+            audioSource.PlayOneShot(hitSound);
+    }
+
+    Debug.Log($"Boss getroffen! Verbleibende Lebenspunkte: {remainingHealth}/{maxHealth}");
+}
+
+    private void SpawnBoss()
+    {
+        if (isGameOver || bossPrefab == null || parentOfTargets == null) return;
+
+        Camera cam = Camera.main;
+        if (cam == null) return;
+
+        float height = cam.orthographicSize;
+        float width = height * cam.aspect;
+
+        Vector3 spawnPos = new Vector3(
+            Random.Range(cam.transform.position.x - width + 1.0f, cam.transform.position.x + width - 1.0f),
+            Random.Range(cam.transform.position.y - height + 1.0f, cam.transform.position.y + height - 1.0f),
+            0f
+        );
+
+        activeBoss = Instantiate(bossPrefab, parentOfTargets.transform);
+        activeBoss.transform.position = spawnPos;
+
+        Debug.Log($"BOSS ERSCHIENEN bei {score} Punkten!");
     }
 }
