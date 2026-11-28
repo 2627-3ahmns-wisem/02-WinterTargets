@@ -6,6 +6,9 @@ public class Target : MonoBehaviour
     public float speed = 3f;
     public float lifeTime = 3.5f;
 
+    [Header("Power-up Einstellungen")]
+    public bool isPowerUp = false; // Im Power-up-Prefab anhaken!
+
     [Header("Effekte")]
     public GameObject hitEffectPrefab;
 
@@ -17,8 +20,6 @@ public class Target : MonoBehaviour
     private void Start()
     {
         gameManager = FindFirstObjectByType<GameManager>();
-        
-        // Nutzt jetzt die einstellbare lifeTime-Variable statt fest 2f
         Destroy(gameObject, lifeTime);
 
         float randomX = Random.Range(-1f, 1f);
@@ -67,17 +68,26 @@ public class Target : MonoBehaviour
 
     private void OnMouseDown()
     {
-        // Klicks ignorieren, wenn die Spielrunde bereits beendet ist
         if (gameManager != null && gameManager.IsGameOver) return;
 
         if (hitEffectPrefab != null)
         {
             GameObject effect = Instantiate(hitEffectPrefab, transform.position, Quaternion.identity);
-            Destroy(effect, 1.5f); // Effekt nach 1,5s aufräumen
+            Destroy(effect, 1.5f);
         }
 
-        Debug.Log("Target getroffen!");
-        gameManager.IncrementScore(points);
+        if (gameManager != null)
+        {
+            if (isPowerUp)
+            {
+                gameManager.ActivateDoublePoints();
+            }
+            else
+            {
+                gameManager.IncrementScore(points);
+            }
+        }
+
         Destroy(gameObject);
     }
 }
