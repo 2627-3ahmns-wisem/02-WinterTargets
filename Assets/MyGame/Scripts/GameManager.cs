@@ -15,63 +15,69 @@ public class GameManager : MonoBehaviour
     public float powerUpDuration = 5f;
     public Text powerUpStatusText;    // Optionaler UI-Text für Wirkung & Restdauer
 
-    [Header("UI & Spielzustand")]
-    public Text scoreText;
-    public Text timerText;
-    public GameObject gameOverPanel;
-    public Text finalScoreText;
+    [Header("Combo & Bonus Einstellungen")]
+    public int comboThreshold = 3;      // Ab 3 Treffern in Folge gibt es Bonus
+    public int comboBonusPoints = 15;   // Höhe der Bonuspunkte
+    public Text comboText;              // UI-Text für Combo & Bonus
+
+    [Header("Schwierigkeits-Einstellungen")]
+    public float startSpawnInterval = 1.2f;     // Langsamer Start (1.2 Sekunden)
+    public float minSpawnInterval = 0.35f;      // Untergrenze: Nie schneller als 0.35s
+    public float startSpeedMultiplier = 1.0f;   // Normale Geschwindigkeit am Anfang
+    public float maxSpeedMultiplier = 2.2f;     // Obergrenze: Maximal 2.2x so schnell
+
+
 
     [Header("Runden-Einstellungen")]
     public float roundDuration = 60f;
 
+
+    [Header("UI & Spielzustand")]
+    public Text scoreText;
+    public Text highScoreText;       // NEU: UI-Text für den Highscore (im Spiel oder GameOver-Panel)
+    public Text timerText;
+    public GameObject gameOverPanel;
+    public Text finalScoreText;
+
+    // Konstante für PlayerPrefs und private Variable
+    private const string HIGH_SCORE_KEY = "HighScore";
+    private int highScore = 0;
+
+    public int HighScore => highScore; 
+
+
+
     [Header("Audio")]
     public AudioClip shootSound;
     public AudioClip hitSound;
-    public AudioClip powerUpSound;    // Optionaler Sound für Power-up
+    public AudioClip powerUpSound;
     private AudioSource audioSource;
-
-
-
-    [Header("Combo & Bonus Einstellungen")]
-    public int comboThreshold = 3;      // Ab 3 Treffern in Folge gibt es Bonus
-    public int comboBonusPoints = 15;   // Höhe der Bonuspunkte
-    public Text comboText; 
-
-    private int currentCombo = 0;
-    private int lastBonusAwarded = 0;
-
-    public int CurrentCombo => currentCombo;
-    public int LastBonusAwarded => lastBonusAwarded;
-
-
-
-    [Header("Schwierigkeits-Einstellungen")]
-public float startSpawnInterval = 1.2f;     // Langsamer Start (1.2 Sekunden)
-public float minSpawnInterval = 0.35f;      // Untergrenze: Nie schneller als 0.35s
-public float startSpeedMultiplier = 1.0f;   // Normale Geschwindigkeit am Anfang
-public float maxSpeedMultiplier = 2.2f;     // Obergrenze: Maximal 2.2x so schnell
-
-private float currentSpawnInterval;
-private float currentSpeedMultiplier;
-private float spawnTimer;
-
-// Öffentliche Properties für Debugging & Tests
-public float CurrentSpawnInterval => currentSpawnInterval;
-public float CurrentSpeedMultiplier => currentSpeedMultiplier;
-
-
 
     private int score = 0;
     private float timeRemaining;
     private bool isGameOver = false;
 
-    // Power-up Zustand & Restdauer (über Properties auch von außen/Tests lesbar)
+    // Power-up Zustand & Restdauer
     private bool isDoublePointsActive = false;
     private float powerUpTimeRemaining = 0f;
 
+    // Combo Zustand
+    private int currentCombo = 0;
+    private int lastBonusAwarded = 0;
+
+    // Schwierigkeit & Spawn-Timer
+    private float currentSpawnInterval;
+    private float currentSpeedMultiplier;
+    private float spawnTimer;
+
+    // Öffentliche Properties für Tests & UI
     public bool IsGameOver => isGameOver;
     public bool IsDoublePointsActive => isDoublePointsActive;
     public float PowerUpTimeRemaining => powerUpTimeRemaining;
+    public int CurrentCombo => currentCombo;
+    public int LastBonusAwarded => lastBonusAwarded;
+    public float CurrentSpawnInterval => currentSpawnInterval;
+    public float CurrentSpeedMultiplier => currentSpeedMultiplier;
 
     private void Start()
     {
@@ -82,11 +88,14 @@ public float CurrentSpeedMultiplier => currentSpeedMultiplier;
         isDoublePointsActive = false;
         powerUpTimeRemaining = 0f;
 
-
         currentCombo = 0;
         lastBonusAwarded = 0;
         UpdateComboUI();
 
+        // Schwierigkeit auf Startwerte setzen
+        currentSpawnInterval = startSpawnInterval;
+        currentSpeedMultiplier = startSpeedMultiplier;
+        spawnTimer = currentSpawnInterval;
 
         if (scoreText != null) scoreText.text = "0";
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
@@ -94,16 +103,10 @@ public float CurrentSpeedMultiplier => currentSpeedMultiplier;
         UpdateTimerUI();
         UpdatePowerUpUI();
 
-
-        currentSpawnInterval = startSpawnInterval;
-        currentSpeedMultiplier = startSpeedMultiplier;
-        spawnTimer = currentSpawnInterval;
+        highScore = PlayerPrefs.GetInt(HIGH_SCORE_KEY, 0);
+        UpdateHighScoreUI();
     }
 
-   
-   
-   
-   
     private void Update()
     {
         if (isGameOver) return;
@@ -114,8 +117,22 @@ public float CurrentSpeedMultiplier => currentSpeedMultiplier;
         {
             timeRemaining = 0f;
             EndGame();
+            return;
         }
         UpdateTimerUI();
+
+        // Schwierigkeit anhand des Rundenfortschritts berechnen (0 = Anfang, 1 = Ende)
+        float progress = Mathf.Clamp01(1f - (timeRemaining / roundDuration));
+        currentSpawnInterval = Mathf.Lerp(startSpawnInterval, minSpawnInterval, progress);
+        currentSpeedMultiplier = Mathf.Lerp(startSpeedMultiplier, maxSpeedMultiplier, progress);
+
+        // Dynamisches Spawnen über Timer
+        spawnTimer -= Time.deltaTime;
+        if (spawnTimer <= 0f)
+        {
+            Spawn();
+            spawnTimer = currentSpawnInterval;
+        }
 
         // Power-up Countdown
         if (isDoublePointsActive)
@@ -130,6 +147,7 @@ public float CurrentSpeedMultiplier => currentSpeedMultiplier;
             UpdatePowerUpUI();
         }
 
+        // Schuss & Fehlschuss-Erkennung
         if (Input.GetMouseButtonDown(0))
         {
             if (audioSource != null && shootSound != null)
@@ -137,35 +155,14 @@ public float CurrentSpeedMultiplier => currentSpeedMultiplier;
 
             CheckForMiss();
         }
+    }
 
-
-        // Fortschritt der Runde berechnen (0 = Start, 1 = Ende)
-        float progress = 1f - (timeRemaining / roundDuration);
-        progress = Mathf.Clamp01(progress); // Sichert Ober-/Untergrenze ab
-
-        // Schwierigkeit messbar anpassen
-        currentSpawnInterval = Mathf.Lerp(startSpawnInterval, minSpawnInterval, progress);
-        currentSpeedMultiplier = Mathf.Lerp(startSpeedMultiplier, maxSpeedMultiplier, progress);
-
-        // Dynamisches Spawnen über Timer statt InvokeRepeating
-        spawnTimer -= Time.deltaTime;
-        if (spawnTimer <= 0f)
-        {
-          Spawn();
-         spawnTimer = currentSpawnInterval;
-        }
-
-     }
-
-    
-    
-    
     public void ActivateDoublePoints()
     {
         if (isGameOver) return;
 
         isDoublePointsActive = true;
-        powerUpTimeRemaining = powerUpDuration; // Setzt/verlängert Dauer auf 5 Sekunden
+        powerUpTimeRemaining = powerUpDuration;
 
         if (audioSource != null && powerUpSound != null)
             audioSource.PlayOneShot(powerUpSound);
@@ -176,117 +173,92 @@ public float CurrentSpeedMultiplier => currentSpeedMultiplier;
         UpdatePowerUpUI();
     }
 
-
-
-   
-   
     private void CheckForMiss()
-{
-    Camera cam = Camera.main;
-    if (cam == null) return;
-
-    Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Input.mousePosition);
-    RaycastHit2D hit = Physics2D.Raycast(mouseWorldPos, Vector2.zero);
-
-    // Wenn nichts getroffen wurde ODER das getroffene Objekt kein Target ist -> Fehlschuss!
-    if (hit.collider == null || hit.collider.GetComponent<Target>() == null)
     {
-        ResetCombo();
-    }
-}
+        Camera cam = Camera.main;
+        if (cam == null) return;
 
+        Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Input.mousePosition);
+        RaycastHit2D hit = Physics2D.Raycast(mouseWorldPos, Vector2.zero);
 
-
-
-
-public void RegisterHit()
-{
-    if (isGameOver) return;
-
-    currentCombo++;
-    lastBonusAwarded = 0;
-
-    // Ab 3 Treffern in Folge Bonuspunkte berechnen
-    if (currentCombo >= comboThreshold)
-    {
-        lastBonusAwarded = comboBonusPoints;
-        score += lastBonusAwarded;
-        Debug.Log($"COMBO {currentCombo}x! +{lastBonusAwarded} Bonuspunkte!");
+        if (hit.collider == null || hit.collider.GetComponent<Target>() == null)
+        {
+            ResetCombo();
+        }
     }
 
-    if (scoreText != null)
+    public void RegisterHit()
     {
-        scoreText.text = score.ToString();
+        if (isGameOver) return;
+
+        currentCombo++;
+        lastBonusAwarded = 0;
+
+        if (currentCombo >= comboThreshold)
+        {
+            lastBonusAwarded = comboBonusPoints;
+            score += lastBonusAwarded;
+            Debug.Log($"COMBO {currentCombo}x! +{lastBonusAwarded} Bonuspunkte!");
+        }
+
+        if (scoreText != null)
+        {
+            scoreText.text = score.ToString();
+        }
+
+        UpdateComboUI();
     }
 
-    UpdateComboUI();
-}
-
-
-
-
-
-public void ResetCombo()
-{
-    if (currentCombo > 0)
+    public void ResetCombo()
     {
-        Debug.Log($"Fehlschuss! Combo von {currentCombo} auf 0 zurückgesetzt.");
+        if (currentCombo > 0)
+        {
+            Debug.Log($"Fehlschuss! Combo von {currentCombo} auf 0 zurückgesetzt.");
+        }
+        currentCombo = 0;
+        lastBonusAwarded = 0;
+        UpdateComboUI();
     }
-    currentCombo = 0;
-    lastBonusAwarded = 0;
-    UpdateComboUI();
-}
 
- 
- 
- 
- 
-public void IncrementScore(int points)
- {
-     if (isGameOver) return;
+    public void IncrementScore(int points)
+    {
+        if (isGameOver) return;
 
-     if (audioSource != null && hitSound != null)
-        audioSource.PlayOneShot(hitSound);
- 
-    RegisterHit();
-  
-    int finalPoints = isDoublePointsActive ? points * 2 : points;
+        if (audioSource != null && hitSound != null)
+            audioSource.PlayOneShot(hitSound);
+
+        RegisterHit();
+
+        int finalPoints = isDoublePointsActive ? points * 2 : points;
         score += finalPoints;
 
         if (scoreText != null)
         {
             scoreText.text = score.ToString();
         }
- }
+    }
 
-
-
-
-
-private void UpdateComboUI()
-{
-    if (comboText == null) return;
-
-    if (currentCombo > 0)
+    private void UpdateComboUI()
     {
-        comboText.gameObject.SetActive(true);
-        if (lastBonusAwarded > 0)
+        if (comboText == null) return;
+
+        if (currentCombo > 0)
         {
-            comboText.text = $"COMBO: {currentCombo}x (+{lastBonusAwarded} BONUS!)";
+            comboText.gameObject.SetActive(true);
+            if (lastBonusAwarded > 0)
+            {
+                comboText.text = $"COMBO: {currentCombo}x (+{lastBonusAwarded} BONUS!)";
+            }
+            else
+            {
+                comboText.text = $"COMBO: {currentCombo}x";
+            }
         }
         else
         {
-            comboText.text = $"COMBO: {currentCombo}x";
+            comboText.gameObject.SetActive(false);
         }
     }
-    else
-    {
-        comboText.gameObject.SetActive(false);
-    }
-}
-
-
-
 
     private void UpdatePowerUpUI()
     {
@@ -311,16 +283,15 @@ private void UpdateComboUI()
         }
     }
 
-    
-    
-    
     private void EndGame()
     {
         isGameOver = true;
         isDoublePointsActive = false;
         powerUpTimeRemaining = 0f;
+        currentCombo = 0;
+
         UpdatePowerUpUI();
-        CancelInvoke("Spawn");
+        UpdateComboUI();
 
         if (parentOfTargets != null)
         {
@@ -335,12 +306,66 @@ private void UpdateComboUI()
 
         if (finalScoreText != null)
             finalScoreText.text = "Endpunktestand: " + score + " Punkte";
+
+        
+        bool isNewHighScore = false;
+        if (score > highScore)
+        {
+           highScore = score;
+          PlayerPrefs.SetInt(HIGH_SCORE_KEY, highScore);
+          PlayerPrefs.Save(); // Sofort dauerhaft auf die Festplatte schreiben
+          isNewHighScore = true;
+             Debug.Log("Neuer Highscore gespeichert: " + highScore);
+        }
+
+         UpdateHighScoreUI();
+
+         if (finalScoreText != null)
+        {
+          if (isNewHighScore)
+                finalScoreText.text = $"Endpunktestand: {score} Punkte\nNEUER HIGHSCORE: {highScore}!";
+         else
+              finalScoreText.text = $"Endpunktestand: {score} Punkte\nHighscore: {highScore}";
+        }
     }
 
+
+
+
+    public void RestartGame()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+
+
+
+    private void UpdateHighScoreUI()
+    {
+        if (highScoreText != null)
+        {
+            highScoreText.text = "Highscore: " + highScore;
+        }
+    }
+
+    // Praktisch zum Testen direkt über Rechtsklick auf das Skript im Inspector
+    [ContextMenu("Highscore zurücksetzen (Test)")]
    
    
    
-   
+    public void ResetHighScore()
+    {
+        PlayerPrefs.DeleteKey(HIGH_SCORE_KEY);
+        PlayerPrefs.Save();
+        highScore = 0;
+        UpdateHighScoreUI();
+        Debug.Log("Highscore wurde auf 0 zurückgesetzt.");
+    }
+
+
+
+
+
     private void Spawn()
     {
         if (isGameOver) return;
@@ -367,14 +392,12 @@ private void UpdateComboUI()
 
         GameObject prefabToSpawn;
 
-        // Prüfen, ob das seltene Power-up spawnt (z. B. 10 % Chance)
         if (powerUpPrefab != null && Random.Range(0f, 100f) < powerUpSpawnChance)
         {
             prefabToSpawn = powerUpPrefab;
         }
         else
         {
-            // Normale Spawn-Verteilung (60% / 30% / 10%)
             float randomChance = Random.Range(0f, 100f);
             int selectedIndex = 0;
 
@@ -390,23 +413,5 @@ private void UpdateComboUI()
 
         GameObject newTarget = Instantiate(prefabToSpawn, parentOfTargets.transform);
         newTarget.transform.position = spawnPosition;
-
-
-        Target targetScript = newTarget.GetComponent<Target>();
-        if (targetScript != null)
-        {
-          targetScript.speed *= currentSpeedMultiplier;
-        }
-        
-    }
-
-  
-  
-  
-  
-  
-    public void RestartGame()
-    {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }
