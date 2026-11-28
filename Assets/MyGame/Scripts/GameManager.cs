@@ -44,6 +44,23 @@ public class GameManager : MonoBehaviour
     public int LastBonusAwarded => lastBonusAwarded;
 
 
+
+    [Header("Schwierigkeits-Einstellungen")]
+public float startSpawnInterval = 1.2f;     // Langsamer Start (1.2 Sekunden)
+public float minSpawnInterval = 0.35f;      // Untergrenze: Nie schneller als 0.35s
+public float startSpeedMultiplier = 1.0f;   // Normale Geschwindigkeit am Anfang
+public float maxSpeedMultiplier = 2.2f;     // Obergrenze: Maximal 2.2x so schnell
+
+private float currentSpawnInterval;
+private float currentSpeedMultiplier;
+private float spawnTimer;
+
+// Öffentliche Properties für Debugging & Tests
+public float CurrentSpawnInterval => currentSpawnInterval;
+public float CurrentSpeedMultiplier => currentSpeedMultiplier;
+
+
+
     private int score = 0;
     private float timeRemaining;
     private bool isGameOver = false;
@@ -76,9 +93,17 @@ public class GameManager : MonoBehaviour
 
         UpdateTimerUI();
         UpdatePowerUpUI();
-        InvokeRepeating("Spawn", 1f, 1f);
+
+
+        currentSpawnInterval = startSpawnInterval;
+        currentSpeedMultiplier = startSpeedMultiplier;
+        spawnTimer = currentSpawnInterval;
     }
 
+   
+   
+   
+   
     private void Update()
     {
         if (isGameOver) return;
@@ -112,8 +137,29 @@ public class GameManager : MonoBehaviour
 
             CheckForMiss();
         }
-    }
 
+
+        // Fortschritt der Runde berechnen (0 = Start, 1 = Ende)
+        float progress = 1f - (timeRemaining / roundDuration);
+        progress = Mathf.Clamp01(progress); // Sichert Ober-/Untergrenze ab
+
+        // Schwierigkeit messbar anpassen
+        currentSpawnInterval = Mathf.Lerp(startSpawnInterval, minSpawnInterval, progress);
+        currentSpeedMultiplier = Mathf.Lerp(startSpeedMultiplier, maxSpeedMultiplier, progress);
+
+        // Dynamisches Spawnen über Timer statt InvokeRepeating
+        spawnTimer -= Time.deltaTime;
+        if (spawnTimer <= 0f)
+        {
+          Spawn();
+         spawnTimer = currentSpawnInterval;
+        }
+
+     }
+
+    
+    
+    
     public void ActivateDoublePoints()
     {
         if (isGameOver) return;
@@ -132,6 +178,8 @@ public class GameManager : MonoBehaviour
 
 
 
+   
+   
     private void CheckForMiss()
 {
     Camera cam = Camera.main;
@@ -146,6 +194,10 @@ public class GameManager : MonoBehaviour
         ResetCombo();
     }
 }
+
+
+
+
 
 public void RegisterHit()
 {
@@ -170,6 +222,10 @@ public void RegisterHit()
     UpdateComboUI();
 }
 
+
+
+
+
 public void ResetCombo()
 {
     if (currentCombo > 0)
@@ -181,7 +237,11 @@ public void ResetCombo()
     UpdateComboUI();
 }
 
- public void IncrementScore(int points)
+ 
+ 
+ 
+ 
+public void IncrementScore(int points)
  {
      if (isGameOver) return;
 
@@ -198,6 +258,10 @@ public void ResetCombo()
             scoreText.text = score.ToString();
         }
  }
+
+
+
+
 
 private void UpdateComboUI()
 {
@@ -247,6 +311,9 @@ private void UpdateComboUI()
         }
     }
 
+    
+    
+    
     private void EndGame()
     {
         isGameOver = true;
@@ -270,6 +337,10 @@ private void UpdateComboUI()
             finalScoreText.text = "Endpunktestand: " + score + " Punkte";
     }
 
+   
+   
+   
+   
     private void Spawn()
     {
         if (isGameOver) return;
@@ -321,9 +392,19 @@ private void UpdateComboUI()
         newTarget.transform.position = spawnPosition;
 
 
+        Target targetScript = newTarget.GetComponent<Target>();
+        if (targetScript != null)
+        {
+          targetScript.speed *= currentSpeedMultiplier;
+        }
         
     }
 
+  
+  
+  
+  
+  
     public void RestartGame()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
