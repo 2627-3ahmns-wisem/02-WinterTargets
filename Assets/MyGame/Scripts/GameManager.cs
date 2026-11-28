@@ -30,6 +30,20 @@ public class GameManager : MonoBehaviour
     public AudioClip powerUpSound;    // Optionaler Sound für Power-up
     private AudioSource audioSource;
 
+
+
+    [Header("Combo & Bonus Einstellungen")]
+    public int comboThreshold = 3;      // Ab 3 Treffern in Folge gibt es Bonus
+    public int comboBonusPoints = 15;   // Höhe der Bonuspunkte
+    public Text comboText; 
+
+    private int currentCombo = 0;
+    private int lastBonusAwarded = 0;
+
+    public int CurrentCombo => currentCombo;
+    public int LastBonusAwarded => lastBonusAwarded;
+
+
     private int score = 0;
     private float timeRemaining;
     private bool isGameOver = false;
@@ -50,6 +64,12 @@ public class GameManager : MonoBehaviour
         isGameOver = false;
         isDoublePointsActive = false;
         powerUpTimeRemaining = 0f;
+
+
+        currentCombo = 0;
+        lastBonusAwarded = 0;
+        UpdateComboUI();
+
 
         if (scoreText != null) scoreText.text = "0";
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
@@ -89,6 +109,8 @@ public class GameManager : MonoBehaviour
         {
             if (audioSource != null && shootSound != null)
                 audioSource.PlayOneShot(shootSound);
+
+            CheckForMiss();
         }
     }
 
@@ -108,22 +130,99 @@ public class GameManager : MonoBehaviour
         UpdatePowerUpUI();
     }
 
-    public void IncrementScore(int points)
+
+
+    private void CheckForMiss()
+{
+    Camera cam = Camera.main;
+    if (cam == null) return;
+
+    Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Input.mousePosition);
+    RaycastHit2D hit = Physics2D.Raycast(mouseWorldPos, Vector2.zero);
+
+    // Wenn nichts getroffen wurde ODER das getroffene Objekt kein Target ist -> Fehlschuss!
+    if (hit.collider == null || hit.collider.GetComponent<Target>() == null)
     {
-        if (isGameOver) return;
+        ResetCombo();
+    }
+}
 
-        if (audioSource != null && hitSound != null)
-            audioSource.PlayOneShot(hitSound);
+public void RegisterHit()
+{
+    if (isGameOver) return;
 
-        // Wenn Power-up aktiv ist, Punkte verdoppeln
-        int finalPoints = isDoublePointsActive ? points * 2 : points;
+    currentCombo++;
+    lastBonusAwarded = 0;
+
+    // Ab 3 Treffern in Folge Bonuspunkte berechnen
+    if (currentCombo >= comboThreshold)
+    {
+        lastBonusAwarded = comboBonusPoints;
+        score += lastBonusAwarded;
+        Debug.Log($"COMBO {currentCombo}x! +{lastBonusAwarded} Bonuspunkte!");
+    }
+
+    if (scoreText != null)
+    {
+        scoreText.text = score.ToString();
+    }
+
+    UpdateComboUI();
+}
+
+public void ResetCombo()
+{
+    if (currentCombo > 0)
+    {
+        Debug.Log($"Fehlschuss! Combo von {currentCombo} auf 0 zurückgesetzt.");
+    }
+    currentCombo = 0;
+    lastBonusAwarded = 0;
+    UpdateComboUI();
+}
+
+ public void IncrementScore(int points)
+ {
+     if (isGameOver) return;
+
+     if (audioSource != null && hitSound != null)
+        audioSource.PlayOneShot(hitSound);
+ 
+    RegisterHit();
+  
+    int finalPoints = isDoublePointsActive ? points * 2 : points;
         score += finalPoints;
 
         if (scoreText != null)
         {
             scoreText.text = score.ToString();
         }
+ }
+
+private void UpdateComboUI()
+{
+    if (comboText == null) return;
+
+    if (currentCombo > 0)
+    {
+        comboText.gameObject.SetActive(true);
+        if (lastBonusAwarded > 0)
+        {
+            comboText.text = $"COMBO: {currentCombo}x (+{lastBonusAwarded} BONUS!)";
+        }
+        else
+        {
+            comboText.text = $"COMBO: {currentCombo}x";
+        }
     }
+    else
+    {
+        comboText.gameObject.SetActive(false);
+    }
+}
+
+
+
 
     private void UpdatePowerUpUI()
     {

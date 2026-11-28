@@ -80,6 +80,7 @@ public class Target : MonoBehaviour
         {
             if (isPowerUp)
             {
+               gameManager.RegisterHit();
                 gameManager.ActivateDoublePoints();
             }
             else
