@@ -11,6 +11,26 @@ public class GameManager : MonoBehaviour
     public float powerUpSpawnChance = 10f; // 10 % Wahrscheinlichkeit (selten)
     public GameObject parentOfTargets;
 
+
+
+
+    [Header("Audio & Musik")]
+    public AudioClip shootSound;
+    public AudioClip hitSound;
+    public AudioClip powerUpSound;
+    public AudioClip bossHitSound;
+    public AudioClip backgroundMusic;    // NEU: Hintergrundmusik-Clip
+    public Slider volumeSlider;          // NEU: UI-Slider (0.0 bis 1.0)
+    public Toggle muteToggle;            // NEU: Optionaler Mute-Schalter (Stumm)
+
+    private AudioSource audioSource;     // Bestehende AudioSource für Soundeffekte (SFX)
+    private AudioSource musicSource;     // NEU: Eigene AudioSource nur für Hintergrundmusik
+    private const string VOLUME_KEY = "MasterVolume";
+
+
+
+
+
     [Header("Power-up Einstellungen")]
     public float powerUpDuration = 5f;
     public Text powerUpStatusText;    // Optionaler UI-Text für Wirkung & Restdauer
@@ -32,7 +52,7 @@ public class GameManager : MonoBehaviour
     [Header("Boss-Einstellungen")]
     public GameObject bossPrefab;         // Dein Boss-Schneemann-Prefab
     public int bossScoreInterval = 100;   // Nachvollziehbare Bedingung: Alle 100 Punkte erscheint ein Boss
-    public AudioClip bossHitSound;        // Dumpferer/metallischer Sound für Boss-Rüstung (optional)
+   
 
     private int nextBossScoreThreshold;
     private GameObject activeBoss;
@@ -60,11 +80,7 @@ public class GameManager : MonoBehaviour
 
 
 
-    [Header("Audio")]
-    public AudioClip shootSound;
-    public AudioClip hitSound;
-    public AudioClip powerUpSound;
-    private AudioSource audioSource;
+    
 
     private int score = 0;
     private float timeRemaining;
@@ -126,6 +142,43 @@ public class GameManager : MonoBehaviour
         nextBossScoreThreshold = bossScoreInterval;
         activeBoss = null;
 
+
+
+
+
+
+        audioSource = GetComponent<AudioSource>();
+
+        // Eigene AudioSource für Musik erzeugen, damit SFX und Musik getrennt laufen
+        musicSource = gameObject.AddComponent<AudioSource>();
+        musicSource.clip = backgroundMusic;
+        musicSource.loop = true;
+        musicSource.playOnAwake = false;
+        musicSource.volume = 0.5f; // Musik etwas dezenter als Soundeffekte
+
+        // Gespeicherte Lautstärke laden (Standard: 1.0 = 100%)
+        float savedVolume = PlayerPrefs.GetFloat(VOLUME_KEY, 1.0f);
+        AudioListener.volume = savedVolume;
+
+        if (volumeSlider != null)
+        {
+            volumeSlider.minValue = 0f;
+            volumeSlider.maxValue = 1f;
+            volumeSlider.value = savedVolume;
+            volumeSlider.onValueChanged.AddListener(SetVolume);
+        }
+
+        if (muteToggle != null)
+        {
+            muteToggle.isOn = (savedVolume <= 0.001f);
+            muteToggle.onValueChanged.AddListener(SetMute);
+        }
+
+        // Hintergrundmusik starten (verhindert mehrfaches Abspielen)
+        if (backgroundMusic != null && !musicSource.isPlaying)
+        {
+           musicSource.Play();
+        }
 
     }
 
@@ -357,6 +410,12 @@ public class GameManager : MonoBehaviour
          else
               finalScoreText.text = $"Endpunktestand: {score} Punkte\nHighscore: {highScore}";
         }
+
+
+        if (musicSource != null && musicSource.isPlaying)
+        {
+           musicSource.Stop();
+        }
     }
 
 
@@ -487,5 +546,43 @@ public class GameManager : MonoBehaviour
         activeBoss.transform.position = spawnPos;
 
         Debug.Log($"BOSS ERSCHIENEN bei {score} Punkten!");
+    }
+
+
+
+
+
+
+
+    public void SetVolume(float volume)
+    {
+        AudioListener.volume = volume;
+        PlayerPrefs.SetFloat(VOLUME_KEY, volume);
+        PlayerPrefs.Save();
+
+        // Mute-Toggle automatisch anpassen, falls Slider auf 0 gezogen wird
+        if (muteToggle != null)
+        {
+            muteToggle.SetIsOnWithoutNotify(volume <= 0.001f);
+        }
+    }
+
+    public void SetMute(bool isMuted)
+    {
+        if (isMuted)
+        {
+            AudioListener.volume = 0f;
+            if (volumeSlider != null) volumeSlider.SetValueWithoutNotify(0f);
+        }
+        else
+        {
+            float restoredVolume = PlayerPrefs.GetFloat(VOLUME_KEY, 1.0f);
+            if (restoredVolume <= 0.001f) restoredVolume = 0.5f;
+
+            AudioListener.volume = restoredVolume;
+            if (volumeSlider != null) volumeSlider.SetValueWithoutNotify(restoredVolume);
+            PlayerPrefs.SetFloat(VOLUME_KEY, restoredVolume);
+            PlayerPrefs.Save();
+        }
     }
 }
