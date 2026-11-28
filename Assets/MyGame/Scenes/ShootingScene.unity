@@ -2120,6 +2120,7 @@ MonoBehaviour:
   - {fileID: 3102440315820291259, guid: 6cec31a8dbf364d31bb34d262e5a54a4, type: 3}
   - {fileID: 1515063006784582549, guid: 153cab6b7cff7493bbef76f874ccdb79, type: 3}
   - {fileID: 7303422254039273360, guid: 0c4d66e884f674bcc9bb12f4819553ee, type: 3}
+  - {fileID: 3102440315820291259, guid: 18099d222fc6049098deae48e7fbaad6, type: 3}
   powerUpPrefab: {fileID: 8390102227941309712, guid: c7e28a863d0a54b70bd5dda3a6d7b075, type: 3}
   powerUpSpawnChance: 10
   parentOfTargets: {fileID: 299934296}
@@ -2141,7 +2142,7 @@ MonoBehaviour:
   maxSpeedMultiplier: 2.2
   bossPrefab: {fileID: 6613221883882650850, guid: 6dda1135393cb467687891f6e4cdc730, type: 3}
   bossScoreInterval: 100
-  comboBonusEffectPrefab: {fileID: 0}
+  comboBonusEffectPrefab: {fileID: 9059545166873477466, guid: 2353a76be5dfc4da789bd92774391fa7, type: 3}
   roundDuration: 60
   scoreText: {fileID: 821733796}
   highScoreText: {fileID: 2020847968}

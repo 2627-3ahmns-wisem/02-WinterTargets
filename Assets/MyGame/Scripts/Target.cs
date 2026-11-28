@@ -17,7 +17,10 @@ public class Target : MonoBehaviour
 
 
 
-
+    [Header("Frost-Bombe (Eigene Mechanik)")]
+    public bool isFrostBomb = false;          // Im Frost-Bomben-Prefab anhaken!
+    public float explosionRadius = 3.5f;      // Wirkungsradius der Kettenreaktion
+    public GameObject frostNovaEffectPrefab;
 
 
     [Header("Effekte")]
@@ -156,6 +159,11 @@ public class Target : MonoBehaviour
             }
         }
 
+        if (isFrostBomb)
+        {
+            TriggerFrostExplosion();
+        }
+
         Destroy(gameObject);
 
 
@@ -199,5 +207,58 @@ public class Target : MonoBehaviour
         // Schrumpft pro Treffer leicht, damit man auch an der Größe sieht, dass HP fehlen
         float scaleFactor = 0.85f + (0.15f * ((float)currentHealth / maxHealth));
         transform.localScale = originalScale * scaleFactor;
+    }
+
+
+
+
+
+
+
+    private void TriggerFrostExplosion()
+    {
+        // 1. Sichtbaren Eis-Effekt auslösen
+        if (frostNovaEffectPrefab != null)
+        {
+            GameObject nova = Instantiate(frostNovaEffectPrefab, transform.position, Quaternion.identity);
+            Destroy(nova, 1.5f);
+        }
+
+        // 2. Alle Collider im Umkreis erfassen
+        Collider2D[] hitColliders = Physics2D.OverlapCircleAll(transform.position, explosionRadius);
+        int affectedTargets = 0;
+
+        foreach (Collider2D col in hitColliders)
+        {
+            // Sich selbst überspringen (Endlosschleife verhindern!)
+            if (col.gameObject == gameObject) continue;
+
+            Target otherTarget = col.GetComponent<Target>();
+            if (otherTarget != null && !otherTarget.isPowerUp)
+            {
+                affectedTargets++;
+
+                // Grenzfall: Wenn ein zweites Bomben-Ziel daneben liegt, nur normale Punkte geben
+                if (otherTarget.isFrostBomb)
+                {
+                    otherTarget.isFrostBomb = false;
+                }
+
+                // Normale Ziele werden zerstört, Boss-Ziele nehmen 1 Schaden
+                otherTarget.TakeHit();
+            }
+        }
+
+        Debug.Log($"[Frost-Bombe] Kettenreaktion ausgelöst! {affectedTargets} umliegende Ziele getroffen.");
+    }
+
+    // Zeichnet den Explosionsradius im Unity-Scene-Fenster zur Kontrolle (Gizmo)
+    private void OnDrawGizmosSelected()
+    {
+        if (isFrostBomb)
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawWireSphere(transform.position, explosionRadius);
+        }
     }
 }

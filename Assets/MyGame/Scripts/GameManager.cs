@@ -470,7 +470,12 @@ public class GameManager : MonoBehaviour
 
 
     private void Spawn()
-    {
+    {  
+        int selectedIndex = Random.Range(0, targets.Length);
+        
+
+
+
         if (isGameOver) return;
         if (targets == null || targets.Length < 3) return;
         if (parentOfTargets == null) return;
@@ -495,21 +500,29 @@ public class GameManager : MonoBehaviour
 
         GameObject prefabToSpawn;
 
-        if (powerUpPrefab != null && Random.Range(0f, 100f) < powerUpSpawnChance)
+       if (powerUpPrefab != null && Random.Range(0f, 100f) < powerUpSpawnChance)
         {
             prefabToSpawn = powerUpPrefab;
         }
         else
         {
-            float randomChance = Random.Range(0f, 100f);
-            int selectedIndex = 0;
+            
 
-            if (randomChance < 60f)
-                selectedIndex = 2;
-            else if (randomChance < 90f)
-                selectedIndex = 1;
+            // 15 % Chance auf Frost-Bombe (Element 3), falls vorhanden
+            if (targets.Length >= 4 && Random.Range(0f, 100f) < 15f)
+            {
+                selectedIndex = 3;
+            }
             else
-                selectedIndex = 0;
+            {
+                float randomChance = Random.Range(0f, 100f);
+                if (randomChance < 60f)
+                    selectedIndex = 2;
+                else if (randomChance < 90f)
+                    selectedIndex = 1;
+                else
+                    selectedIndex = 0;
+            }
 
             prefabToSpawn = targets[selectedIndex];
         }
